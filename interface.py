@@ -1,4 +1,5 @@
 from tkinter import *
+import itertools
 import csv
 
 # On ouvre le fichier des distances
@@ -12,7 +13,9 @@ for i in range(len(data[0][1:])):
 
 data.pop(0)
 for i in range(len(data)):
-    data[i].pop(0)
+    data[i].pop()
+
+distances = data
 
 
 coordonnees = {
@@ -29,7 +32,7 @@ coordonnees = {
 }
 
 def test_and_run():
-    global cities, distances, coordonnees, villes_passage
+    global cities, data, coordonnees, villes_passage
 
     start_button.pack_forget()
 
@@ -47,9 +50,10 @@ def test_and_run():
     ville_arrivee = villes_passage[-1]
     villes_passage.pop()
     
-    choix(ville_depart, villes_passage, ville_arrivee, cities, data, coordonnees, 0)
+    # algo_glouton(ville_depart, villes_passage, ville_arrivee, cities, data, coordonnees, 0)
+    algo_bourrin(ville_depart, ville_arrivee, villes_passage, data, cities, coordonnees)
 
-def choix(ville_depart:str, villes_passage:list, ville_arrivee:str, villes:dict, distances:list, coordonnees:dict, count:int):
+def algo_glouton(ville_depart:str, villes_passage:list, ville_arrivee:str, villes:dict, distances:list, coordonnees:dict, count:int):
     """Choisit parmi une liste de villes le chemin le plus court pour aller
     d'un point A à un point B en passant par un nombre illimité de points C"""
 
@@ -80,7 +84,33 @@ def choix(ville_depart:str, villes_passage:list, ville_arrivee:str, villes:dict,
     if len(villes) <= 1: 
         return "Not Found"
     
-    choix(ville_depart=distance_minimum[1], villes=newVilles, distances=distances, ville_arrivee=ville_arrivee, villes_passage=villes_passage, coordonnees=coordonnees, count=count+1)
+    algo_glouton(ville_depart=distance_minimum[1], villes=newVilles, distances=distances, ville_arrivee=ville_arrivee, villes_passage=villes_passage, coordonnees=coordonnees, count=count+1)
+
+def algo_bourrin(ville_depart, ville_arrivee, villes_passage, distances, villes, coordonnees):
+    choix = list(itertools.permutations(villes_passage))
+    liste_toutes_distances = list()
+    for i in range(len(choix)):
+        choix[i] = list(choix[i])
+        choix[i].append(ville_arrivee)
+        choix[i].insert(0, ville_depart)
+        
+        liste_toutes_distances.append(0)
+        for j in range(1, len(choix[i])):
+            print(distances[villes[choix[i][j-1]]][villes[choix[i][j]]])
+            liste_toutes_distances[i] += int(distances[villes[choix[i][j-1]]][villes[choix[i][j]]])
+        
+    minimum, indice_minimum = 99999, 0
+    for i in range(len(liste_toutes_distances)):
+        if liste_toutes_distances[i] < minimum:
+            indice_minimum = i
+            minimum = liste_toutes_distances[i]
+
+    for i in range(1, len(choix[indice_minimum])):
+        canvas.create_line(coordonnees[choix[indice_minimum][i-1]], coordonnees[choix[indice_minimum][i]], width=3, fill="green")
+        canvas.create_text(coordonnees[choix[indice_minimum][i-1]], text=i, font=("Calibri Bold", 15), anchor=CENTER, fill="white")
+    canvas.create_text(coordonnees[choix[indice_minimum][-1]], text="🛖", font="Calibri 15", anchor=CENTER, fill='white')
+
+
 
 def addPlaces(e):
     global coordonnees, villes_passage
